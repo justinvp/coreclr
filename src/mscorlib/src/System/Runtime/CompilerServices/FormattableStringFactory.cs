@@ -13,45 +13,50 @@
 namespace System.Runtime.CompilerServices
 {
     /// <summary>
-    /// A factory type used by compilers to create instances of the type <see cref="FormattableString"/>.
+    /// A factory type used by compilers to create instances of the type <see cref="FormattableString{TArguments}"/>.
     /// </summary>
     public static class FormattableStringFactory
     {
         /// <summary>
-        /// Create a <see cref="FormattableString"/> from a composite format string and object
+        /// Create a <see cref="FormattableString{TArguments}"/> from a composite format string and object
         /// array containing zero or more objects to format.
         /// </summary>
-        public static FormattableString Create(string format, params object[] arguments)
+        public static FormattableString<Arguments> Create(string format, params object[] arguments)
         {
-            if (format == null)
-            {
-                throw new ArgumentNullException("format");
-            }
-
-            if (arguments == null)
-            {
-                throw new ArgumentNullException("arguments");
-            }
-
-            return new ConcreteFormattableString(format, arguments);
+            return new FormattableString<Arguments>(format, new Arguments(arguments));
         }
 
-        private sealed class ConcreteFormattableString : FormattableString
+        public struct Arguments : IEquatable<Arguments>, IFormattable
         {
-            private readonly string _format;
             private readonly object[] _arguments;
 
-            internal ConcreteFormattableString(string format, object[] arguments)
+            public Arguments(object[] arguments)
             {
-                _format = format;
+                if (arguments == null)
+                    throw new ArgumentNullException("arguments");
+
                 _arguments = arguments;
             }
 
-            public override string Format { get { return _format; } }
-            public override object[] GetArguments() { return _arguments; }
-            public override int ArgumentCount { get { return _arguments.Length; } }
-            public override object GetArgument(int index) { return _arguments[index]; }
-            public override string ToString(IFormatProvider formatProvider) { return string.Format(formatProvider, _format, _arguments); }
+            public string ToString(string format, IFormatProvider formatProvider)
+            {
+                return string.Format(formatProvider, format, _arguments);
+            }
+
+            public bool Equals(Arguments other)
+            {
+                return object.ReferenceEquals(_arguments, other._arguments);
+            }
+
+            public override bool Equals(object obj)
+            {
+                return obj is Arguments && Equals((Arguments)obj);
+            }
+
+            public override int GetHashCode()
+            {
+                return null == _arguments ? 0 : _arguments.GetHashCode();
+            }
         }
     }
 }
