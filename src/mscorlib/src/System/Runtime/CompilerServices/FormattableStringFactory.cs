@@ -26,6 +26,11 @@ namespace System.Runtime.CompilerServices
             return new FormattableString<Arguments>(format, new Arguments(arguments));
         }
 
+        public static FormattableString<Arguments<T>> Create<T>(string format, T argument)
+        {
+            return new FormattableString<Arguments<T>>(format, new Arguments<T>(argument));
+        }
+
         public struct Arguments : IEquatable<Arguments>, IFormattable
         {
             private readonly object[] _arguments;
@@ -56,6 +61,42 @@ namespace System.Runtime.CompilerServices
             public override int GetHashCode()
             {
                 return null == _arguments ? 0 : _arguments.GetHashCode();
+            }
+        }
+
+        public struct Arguments<T> : IEquatable<Arguments<T>>, IFormattable
+        {
+            private readonly T _argument;
+
+            public Arguments(T argument)
+            {
+                _argument = argument;
+            }
+
+            public string ToString(string format, IFormatProvider formatProvider)
+            {
+                // TODO optimize (avoid the array allocation and boxing)
+                // Presumably when this is added, it'd be added at the same time
+                // that new optimized overloads of string.Format are added, that
+                // avoid the array allocation and boxing.
+                return string.Format(formatProvider, format, new object[] { _argument });
+            }
+
+            public bool Equals(Arguments<T> other)
+            {
+                var comparer = EqualityComparer<T>.Default;
+                return comparer.Equals(_argument, other._argument);
+            }
+
+            public override bool Equals(object obj)
+            {
+                return obj is Arguments && Equals((Arguments)obj);
+            }
+
+            public override int GetHashCode()
+            {
+                var comparer = EqualityComparer<T>.Default;
+                return comparer.GetHashCode(_argument);
             }
         }
     }
